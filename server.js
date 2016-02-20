@@ -6,18 +6,25 @@ var cheerio = require('cheerio');
 var app     = express();
 var _ = require('lodash');
 
-app.get('/scrape', function(req, res) {
-    return getClues()
+app.get('/guardian/:number?', function(req, res) {
+    var crosswordNumber = req.params.number || '26811';
+    return getClues(crosswordNumber)
     .then(parseClues)
     .then(function(parsedClues) {
         returnClueJson(parsedClues, res);
+    })
+    .catch(function(error) {
+        res.status(500).send(error.message);
     });
 });
 
-function getClues() {
-    var url = 'https://www.theguardian.com/crosswords/accessible/cryptic/26811';
+function getClues(crosswordNumber) {
+    var url = 'https://www.theguardian.com/crosswords/accessible/cryptic/' + crosswordNumber;
 
     return rp(url)
+    .catch(function() {
+        throw new Error("Could not access the crossword with that number");
+    })
     .then(function(html){
         var $ = cheerio.load(html);
         var clueElements = $('.crossword__clue');
@@ -48,6 +55,7 @@ function parseClue(clue) {
         clue.startLocation = match[1];
         clue.clue = match[2];
         clue.wordLengths = match[3];
+        delete clue.text;
         return clue;
     }
     // Format is e.g. "(4D) See 1A"
@@ -57,6 +65,7 @@ function parseClue(clue) {
         clue.type = 'seeOther';
         clue.startLocation = match[1];
         clue.seeOther = match[2];
+        delete clue.text;
         return clue;
     }
     throw new Error("Clue didn't match any known format");
@@ -67,7 +76,7 @@ function returnClueJson(parsedClues, res) {
     res.send(JSON.stringify(parsedClues));
 }
 
-//Navigate to http://localhost:8081/scrape to run
+//Navigate to e.g. http://localhost:8081/guardian/26811 to run
 app.listen('8081');
 
 exports = module.exports = app;
