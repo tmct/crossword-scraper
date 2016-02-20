@@ -7,7 +7,11 @@ var app     = express();
 var _ = require('lodash');
 
 app.get('/scrape', function(req, res) {
-    return getClues().then(parseClues);
+    return getClues()
+    .then(parseClues)
+    .then(function(parsedClues) {
+        returnClueJson(parsedClues, res);
+    });
 });
 
 function getClues() {
@@ -32,9 +36,7 @@ function fetchClueDetails(clueElement) {
 }
 
 function parseClues(clues) {
-    var parsedClues = _.map(clues, parseClue);
-    //Just log for now
-    console.log(parsedClues);
+    return _.map(clues, parseClue);
 }
 
 function parseClue(clue) {
@@ -58,7 +60,11 @@ function parseClue(clue) {
         return clue;
     }
     throw new Error("Clue didn't match any known format");
-    
+}
+
+function returnClueJson(parsedClues, res) {
+    res.setHeader('Content-Type', 'application/json');
+    res.send(JSON.stringify(parsedClues));
 }
 
 //Navigate to http://localhost:8081/scrape to run
