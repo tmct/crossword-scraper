@@ -1,0 +1,13 @@
+{
+  "name": "crossword-scraper",
+  "version": "0.0.1",
+  "description": "Grab some crosswords",
+  "main": "server.js",
+  "author": "Tom McTiernan",
+  "dependencies": {
+    "express": "latest",
+    "request-promise": "latest",
+    "cheerio": "latest",
+    "lodash": "latest"
+  }
+}
