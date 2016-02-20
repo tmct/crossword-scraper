@@ -6,7 +6,7 @@ var cheerio = require('cheerio');
 var app     = express();
 var _ = require('lodash');
 
-app.get('/guardian/:number?', function(req, res) {
+app.get('/guardian/:number(\\d+)?', function(req, res) {
     var crosswordNumber = req.params.number || '26811';
     return getClues(crosswordNumber)
     .then(parseClues)
