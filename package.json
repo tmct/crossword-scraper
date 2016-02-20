@@ -4,6 +4,8 @@
   "description": "Grab some crosswords",
   "main": "server.js",
   "author": "Tom McTiernan",
+  "license": "MIT",
+  "repository": "tmct/crossword-scraper",
   "dependencies": {
     "express": "latest",
     "request-promise": "latest",

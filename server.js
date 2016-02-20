@@ -1,3 +1,5 @@
+//Inspired by https://scotch.io/tutorials/scraping-the-web-with-node-js
+
 var express = require('express');
 var rp = require('request-promise');
 var cheerio = require('cheerio');
