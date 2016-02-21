@@ -6,9 +6,14 @@ var cheerio = require('cheerio');
 var app     = express();
 var _ = require('lodash');
 
-app.get('/guardian/:number(\\d+)?', function(req, res) {
+app.get('/guardian/:type?/:number(\\d+)?', function(req, res) {
+    return createCrosswordJson(req, res);
+});
+
+function createCrosswordJson(req, res) {
     var crosswordNumber = req.params.number || '26811';
-    return getClues(crosswordNumber)
+    var crosswordType = getCrosswordType(req.params.type);
+    return getClues(crosswordNumber, crosswordType)
     .then(parseClues)
     .then(function(parsedClues) {
         returnClueJson(parsedClues, res);
@@ -16,10 +21,21 @@ app.get('/guardian/:number(\\d+)?', function(req, res) {
     .catch(function(error) {
         res.status(500).send(error.message);
     });
-});
+}
 
-function getClues(crosswordNumber) {
-    var url = 'https://www.theguardian.com/crosswords/accessible/cryptic/' + crosswordNumber;
+function getCrosswordType(type) {
+    if (!type) {
+        return 'cryptic';
+    }
+    var allowedTypes = ['cryptic', 'quick', 'quiptic', 'speedy', 'prize', 'everyman'];
+    if (_.includes(allowedTypes, type)) {
+        return type;
+    }
+    throw new Error('crossword type not recognised');
+}
+
+function getClues(crosswordNumber, crosswordType) {
+    var url = 'https://www.theguardian.com/crosswords/accessible/' + crosswordType + '/' + crosswordNumber;
 
     return rp(url)
     .catch(function() {
