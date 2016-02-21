@@ -6,15 +6,18 @@ var cheerio = require('cheerio');
 var app     = express();
 var _ = require('lodash');
 var URI = require('urijs');
+var q = require('q');
 
 app.get('/guardian/:type?/:number(\\d+)?', function(req, res) {
     return createCrosswordJson(req, res);
 });
 
 function createCrosswordJson(req, res) {
-    var crosswordNumber = req.params.number || '26811';
     var crosswordType = getCrosswordType(req.params.type);
-    return getClues(crosswordNumber, crosswordType)
+    return getCrosswordNumber(req.params.number, crosswordType)
+    .then(function(crosswordNumber) {
+        return getClues(crosswordNumber, crosswordType);
+    })
     .then(parseClues)
     .then(function(parsedClues) {
         returnClueJson(parsedClues, res);
@@ -33,6 +36,17 @@ function getCrosswordType(type) {
         return type;
     }
     throw new Error('crossword type not recognised');
+}
+
+function getCrosswordNumber(number, type) {
+    if (number) {
+        return q(number);
+    }
+    throw new Error('Finding latest crossword not yet supported.');
+}
+
+function getLatestCrossword(type) {
+    // body...
 }
 
 function getClues(crosswordNumber, crosswordType) {
