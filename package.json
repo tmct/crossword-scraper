@@ -7,9 +7,10 @@
   "license": "MIT",
   "repository": "tmct/crossword-scraper",
   "dependencies": {
-    "express": "latest",
-    "request-promise": "latest",
     "cheerio": "latest",
-    "lodash": "latest"
+    "express": "latest",
+    "lodash": "latest",
+    "request-promise": "latest",
+    "urijs": "latest"
   }
 }

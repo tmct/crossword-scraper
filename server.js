@@ -5,6 +5,7 @@ var rp = require('request-promise');
 var cheerio = require('cheerio');
 var app     = express();
 var _ = require('lodash');
+var URI = require('urijs');
 
 app.get('/guardian/:type?/:number(\\d+)?', function(req, res) {
     return createCrosswordJson(req, res);
@@ -35,7 +36,10 @@ function getCrosswordType(type) {
 }
 
 function getClues(crosswordNumber, crosswordType) {
-    var url = 'https://www.theguardian.com/crosswords/accessible/' + crosswordType + '/' + crosswordNumber;
+    var url = new URI('https://www.theguardian.com/crosswords/accessible/')
+                .segment(crosswordType)
+                .segment(crosswordNumber)
+                .toString();
 
     return rp(url)
     .catch(function() {
