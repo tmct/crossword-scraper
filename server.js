@@ -14,6 +14,7 @@ app.get('/guardian/:type?/:number(\\d+)?', function(req, res) {
 
 function createCrosswordJson(req, res) {
     var crosswordType = getCrosswordType(req.params.type);
+    //TODO getting the latest should do so then redirect back to the URL with the number
     return getCrosswordNumber(req.params.number, crosswordType)
     .then(function(crosswordNumber) {
         return getClues(crosswordNumber, crosswordType);
@@ -42,11 +43,25 @@ function getCrosswordNumber(number, type) {
     if (number) {
         return q(number);
     }
-    throw new Error('Finding latest crossword not yet supported.');
+    return getLatestCrosswordNumber(type)
 }
 
-function getLatestCrossword(type) {
-    // body...
+function getLatestCrosswordNumber(crosswordType) {
+    var url = new URI('https://www.theguardian.com/crosswords/series/')
+                .segment(crosswordType)
+                .toString();
+
+    return rp(url)
+    .catch(function() {
+        throw new Error("Could not access the series of " + crosswordType + " crosswords");
+    })
+    .then(function(html){
+        var $ = cheerio.load(html);
+        //This finds the element with this href
+        $('a').filter(function(){return $(this).attr('href') === "https://www.theguardian.com/crosswords/cryptic/26811"})
+        //Todo find the one with the max value after "cryptic" that's still a number
+        return '26811'; //Fake for now
+    });
 }
 
 function getClues(crosswordNumber, crosswordType) {
@@ -57,7 +72,7 @@ function getClues(crosswordNumber, crosswordType) {
 
     return rp(url)
     .catch(function() {
-        throw new Error("Could not access the crossword with that number");
+        throw new Error("Could not access " + crosswordType + " crossword number " + crosswordNumber);
     })
     .then(function(html){
         var $ = cheerio.load(html);
