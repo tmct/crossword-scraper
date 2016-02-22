@@ -6,19 +6,26 @@ var cheerio = require('cheerio');
 var app     = express();
 var _ = require('lodash');
 var URI = require('urijs');
-var q = require('q');
 
-app.get('/guardian/:type?/:number(\\d+)?', function(req, res) {
+app.get('/crosswords/guardian/:type?/:number(\\d+)', function(req, res) {
     return createCrosswordJson(req, res);
 });
 
+app.get('/crosswords/guardian/:type?', function(req, res) {
+    return redirectToLatestCrossword(req, res);
+});
+
+function redirectToLatestCrossword(req, res) {
+    var crosswordType = getCrosswordType(req.params.type);
+    return getLatestCrosswordNumber(crosswordType).then(function(crosswordNumber) {
+        res.redirect("/crosswords/guardian/" + crosswordType + "/" + crosswordNumber);
+    });
+}
+
 function createCrosswordJson(req, res) {
     var crosswordType = getCrosswordType(req.params.type);
-    //TODO getting the latest should do so then redirect back to the URL with the number
-    return getCrosswordNumber(req.params.number, crosswordType)
-    .then(function(crosswordNumber) {
-        return getClues(crosswordNumber, crosswordType);
-    })
+    var crosswordNumber = req.params.number;
+    return getClues(crosswordNumber, crosswordType)
     .then(parseClues)
     .then(function(parsedClues) {
         returnClueJson(parsedClues, res);
@@ -39,13 +46,6 @@ function getCrosswordType(type) {
     throw new Error('crossword type not recognised');
 }
 
-function getCrosswordNumber(number, type) {
-    if (number) {
-        return q(number);
-    }
-    return getLatestCrosswordNumber(type)
-}
-
 function getLatestCrosswordNumber(crosswordType) {
     var url = new URI('https://www.theguardian.com/crosswords/series/')
                 .segment(crosswordType)
@@ -57,7 +57,6 @@ function getLatestCrosswordNumber(crosswordType) {
     })
     .then(function(html){
         var $ = cheerio.load(html);
-        //This finds the element with this href
         var crosswordNumbers = $('a')
         .filter(function(){
             var href = $(this).attr('href');
@@ -134,7 +133,7 @@ function returnClueJson(parsedClues, res) {
     res.send(JSON.stringify(parsedClues));
 }
 
-//Navigate to e.g. http://localhost:8081/guardian/26811 to run
+//Navigate to e.g. http://localhost:8081/crosswords/guardian to run
 app.listen('8081');
 
 exports = module.exports = app;
