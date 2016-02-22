@@ -58,9 +58,18 @@ function getLatestCrosswordNumber(crosswordType) {
     .then(function(html){
         var $ = cheerio.load(html);
         //This finds the element with this href
-        $('a').filter(function(){return $(this).attr('href') === "https://www.theguardian.com/crosswords/cryptic/26811"})
-        //Todo find the one with the max value after "cryptic" that's still a number
-        return '26811'; //Fake for now
+        var crosswordNumbers = $('a')
+        .filter(function(){
+            var href = $(this).attr('href');
+            return href && href.startsWith("https://www.theguardian.com/crosswords/" + crosswordType)
+        })
+        .map(function() {
+            return _.last(new URI($(this).attr('href')).segment());
+        });
+        crosswordNumbers = _.filter(crosswordNumbers, function(num) {
+            return num.match(/^\d+$/);
+        });
+        return _.max(crosswordNumbers);
     });
 }
 
