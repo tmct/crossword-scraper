@@ -6,18 +6,26 @@ var cheerio = require('cheerio');
 var app     = express();
 var _ = require('lodash');
 var URI = require('urijs');
-var q = require('q');
 
-app.get('/guardian/:type?/:number(\\d+)?', function(req, res) {
+app.get('/crosswords/guardian/:type?/:number(\\d+)', function(req, res) {
     return createCrosswordJson(req, res);
 });
 
+app.get('/crosswords/guardian/:type?', function(req, res) {
+    return redirectToLatestCrossword(req, res);
+});
+
+function redirectToLatestCrossword(req, res) {
+    var crosswordType = getCrosswordType(req.params.type);
+    return getLatestCrosswordNumber(crosswordType).then(function(crosswordNumber) {
+        res.redirect("/crosswords/guardian/" + crosswordType + "/" + crosswordNumber);
+    });
+}
+
 function createCrosswordJson(req, res) {
     var crosswordType = getCrosswordType(req.params.type);
-    return getCrosswordNumber(req.params.number, crosswordType)
-    .then(function(crosswordNumber) {
-        return getClues(crosswordNumber, crosswordType);
-    })
+    var crosswordNumber = req.params.number;
+    return getClues(crosswordNumber, crosswordType)
     .then(parseClues)
     .then(function(parsedClues) {
         returnClueJson(parsedClues, res);
@@ -38,15 +46,30 @@ function getCrosswordType(type) {
     throw new Error('crossword type not recognised');
 }
 
-function getCrosswordNumber(number, type) {
-    if (number) {
-        return q(number);
-    }
-    throw new Error('Finding latest crossword not yet supported.');
-}
+function getLatestCrosswordNumber(crosswordType) {
+    var url = new URI('https://www.theguardian.com/crosswords/series/')
+                .segment(crosswordType)
+                .toString();
 
-function getLatestCrossword(type) {
-    // body...
+    return rp(url)
+    .catch(function() {
+        throw new Error("Could not access the series of " + crosswordType + " crosswords");
+    })
+    .then(function(html){
+        var $ = cheerio.load(html);
+        var crosswordNumbers = $('a')
+        .filter(function(){
+            var href = $(this).attr('href');
+            return href && href.startsWith("https://www.theguardian.com/crosswords/" + crosswordType)
+        })
+        .map(function() {
+            return _.last(new URI($(this).attr('href')).segment());
+        });
+        crosswordNumbers = _.filter(crosswordNumbers, function(num) {
+            return num.match(/^\d+$/);
+        });
+        return _.max(crosswordNumbers);
+    });
 }
 
 function getClues(crosswordNumber, crosswordType) {
@@ -57,7 +80,7 @@ function getClues(crosswordNumber, crosswordType) {
 
     return rp(url)
     .catch(function() {
-        throw new Error("Could not access the crossword with that number");
+        throw new Error("Could not access " + crosswordType + " crossword number " + crosswordNumber);
     })
     .then(function(html){
         var $ = cheerio.load(html);
@@ -110,7 +133,7 @@ function returnClueJson(parsedClues, res) {
     res.send(JSON.stringify(parsedClues));
 }
 
-//Navigate to e.g. http://localhost:8081/guardian/26811 to run
+//Navigate to e.g. http://localhost:8081/crosswords/guardian to run
 app.listen('8081');
 
 exports = module.exports = app;
